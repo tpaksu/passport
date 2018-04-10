@@ -29,9 +29,9 @@ trait HandlesOAuthErrors
         } catch (OAuthServerException $e) {
             $this->exceptionHandler()->report($e);
 
-            return $this->convertResponse(
+            return $this->translateResponse($this->convertResponse(
                 $e->generateHttpResponse(new Psr7Response)
-            );
+            ));
         } catch (Exception $e) {
             $this->exceptionHandler()->report($e);
 
@@ -41,6 +41,33 @@ trait HandlesOAuthErrors
 
             return new Response($this->configuration()->get('app.debug') ? $e->getMessage() : 'Error.', 500);
         }
+    }
+
+    /**
+     * Translates the response content
+     *
+     * @return \Illuminate\Http\Response
+     */
+    protected function translateResponse(Response $httpResponse)
+    {
+        // get response content as object
+        $content = json_decode($httpResponse->content(), false);
+
+        // backup the old message and hint properties
+        $message_backup = property_exists($content->message) ? $content->message : false;
+        $message_hint_backup = property_exists($content,"hint") ? $content->hint : false;
+
+        // translate strings
+        $content->message = trans("passport::messages.".$content->error);
+        $content->hint = trans("passport::messages.".$content->error."_hint");
+
+        // if the translation file doesn't contain the key, restore from backup, and if property didn't exist before, delete the keys from the message
+        if($content->message == "passport:messages.".$content->error) $content->message = $message_backup;
+        if($content->message == false) unset($content->message);
+        if($content->hint == "passport:messages.".$content->error."_hint") $content->hint = $message_hint_backup;
+        if($content->hint == false) unset($content->hint);
+
+        return $httpResponse->setContent(json_encode($content));
     }
 
     /**

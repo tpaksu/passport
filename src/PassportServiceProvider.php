@@ -33,6 +33,7 @@ class PassportServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'passport');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/translations', 'passport');
 
         $this->deleteCookieOnLogout();
 
@@ -46,6 +47,10 @@ class PassportServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/assets/js/components' => base_path('resources/assets/js/components/passport'),
             ], 'passport-components');
+
+            $this->publishes([
+                __DIR__.'/../resources/translations' => resource_path('lang/vendor/passport'),
+            ], 'passport-localization');
 
             $this->commands([
                 Console\InstallCommand::class,
